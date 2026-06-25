@@ -70,3 +70,13 @@ export async function findById(id) {
 
     return rows[0] ?? null;
 }
+
+export async function deleteRefreshToken(tokenHash) {
+    await pool.execute(
+        `
+            DELETE FROM refresh_tokens
+            WHERE token_hash = ?
+        `,
+        [tokenHash]
+    );
+}

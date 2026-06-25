@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { findByUsername, findByEmail, createUser, updateLastLogin, saveRefreshToken, findById } from "../repositories/auth.repository.js";
+import { findByUsername, findByEmail, createUser, updateLastLogin, saveRefreshToken, findById, deleteRefreshToken } from "../repositories/auth.repository.js";
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
 import { hashToken } from '../utils/hash.js';
 
@@ -115,4 +115,16 @@ export async function me(userId) {
     }
 
     return { status: 200, data: user };
+}
+
+export async function logout(refreshToken) {
+    const refreshTokenHash = hashToken(refreshToken);
+    await deleteRefreshToken(refreshTokenHash);
+
+    return {
+        status: 200,
+        data: {
+            message: 'Wylogowano pomyślnie.'
+        }
+    };
 }
