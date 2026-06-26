@@ -1,6 +1,17 @@
 import bcrypt from 'bcrypt';
-import { findByUsername, findByEmail, createUser, updateLastLogin, saveRefreshToken, findById, deleteRefreshToken } from "../repositories/auth.repository.js";
-import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
+
+import { 
+    findByUsername, 
+    findByEmail, 
+    createUser, 
+    updateLastLogin, 
+    saveRefreshToken, 
+    findById, 
+    deleteRefreshToken,
+    findRefreshToken 
+} from "../repositories/auth.repository.js";
+
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
 import { hashToken } from '../utils/hash.js';
 
 export async function register(data) {
@@ -127,4 +138,42 @@ export async function logout(refreshToken) {
             message: 'Wylogowano pomyślnie.'
         }
     };
+}
+
+export async function refresh(refreshToken) {
+    try {
+        const payload = verifyRefreshToken(refreshToken);
+        const refreshTokenHash = hashToken(refreshToken);
+        const storedToken = await findRefreshToken(refreshTokenHash);
+
+        if(!storedToken) {
+            return { status: 401, data: { message: 'Refresh token jest nieprawidłowy.' } }
+        }
+
+        if(new Date(storedToken.expiresAt) < new Date()) {
+            await deleteRefreshToken(refreshTokenHash);
+
+            return { status: 401, data: { message: 'Refresh token wygasł.' } };
+        }
+
+        const user = await findById(payload.id);
+
+        if(!user) {
+            return { status: 401, data: { message: 'Użytkownik nie istnieje' } };
+        }
+
+        await deleteRefreshToken(refreshTokenHash);
+        
+        const newAccessToken = generateAccessToken(user);
+        const newRefreshToken = generateRefreshToken(user);
+        const newRefreshTokenHash = hashToken(newRefreshToken);
+
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+        await saveRefreshToken(user.id, newRefreshTokenHash, expiresAt);
+
+        return { status: 200, data: { accessToken: newAccessToken, refreshToken: newRefreshToken } };
+    } catch (error) {
+        return { status: 401, data: { message: 'Refresh token jest nieprawidłowy.' } }
+    }
 }

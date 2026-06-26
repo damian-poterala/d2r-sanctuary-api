@@ -69,3 +69,21 @@ export async function logout(req, res) {
         return res.status(500).json({ message: 'Wystąpił błąd serwera.' })
     }
 }
+
+export async function refresh(req, res) {
+    try {
+        const { refreshToken } = req.body;
+
+        if(!refreshToken) {
+            return res.status(400).json({ message: 'Brak refresh token.' });
+        }
+
+        const result = await authService.refresh(refreshToken);
+
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error(error);
+        
+        return res.status(500).json({ message: 'Wystąpił błąd serwera.' });
+    }
+}

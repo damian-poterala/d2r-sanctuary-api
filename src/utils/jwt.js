@@ -25,3 +25,7 @@ export function generateRefreshToken(user) {
         }
     );
 }
+
+export function verifyRefreshToken(token) {
+    return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+}

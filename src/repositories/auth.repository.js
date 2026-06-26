@@ -72,11 +72,24 @@ export async function findById(id) {
 }
 
 export async function deleteRefreshToken(tokenHash) {
-    await pool.execute(
+    const [result] = await pool.execute(
         `
             DELETE FROM refresh_tokens
             WHERE token_hash = ?
         `,
         [tokenHash]
     );
+
+    return result.affectedRows;
+}
+
+export async function findRefreshToken(tokenHash) {
+    const [rows] = await pool.execute(
+        `
+            SELECT * FROM refresh_tokens WHERE token_hash = ? LIMIT 1
+        `,
+        [tokenHash]
+    );
+
+    return rows[0] ?? null;
 }
